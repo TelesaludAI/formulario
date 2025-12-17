@@ -11,7 +11,16 @@ from pydantic import BaseModel
 import psycopg2
 import os
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],        # en producción puedes limitarlo
+    allow_methods=["*"],        # INCLUYE OPTIONS
+    allow_headers=["*"],        # INCLUYE X-API-KEY
+)
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 API_KEY = os.environ["API_KEY"]
