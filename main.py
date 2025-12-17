@@ -51,9 +51,9 @@ class FormData(BaseModel):
 
     # Datos personales
     nombre: str
-    cedula: str
-    correo: Optional[EmailStr] = None
-    celular: Optional[str] = None
+    cedula: int
+    correo: Optional[str] = None
+    celular: Optional[int] = None
     profesion: Optional[str] = None
     cargo: Optional[str] = None
 
@@ -66,13 +66,13 @@ class FormData(BaseModel):
 
     # Votación
     punto_votacion: Optional[str] = None
-    mesa_votacion: Optional[int] = None
+    mesa_votacion: Optional[str] = None
 
     # Geolocalización
     lat_lon: Optional[str] = None
 
     # Auditoría
-    useremail: EmailStr
+    useremail: str
     hora_registro: time
 
 
