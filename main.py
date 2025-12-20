@@ -152,8 +152,9 @@ def guardar_formulario(
 
         return {"ok": True}
 
-    except Exception as e:
-        print("ERROR EN /formulario")
-        print(str(e))
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+    except psycopg2.errors.UniqueViolation:
+        conn.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="La cédula ya existe"
+        )
