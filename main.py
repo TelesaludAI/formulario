@@ -58,8 +58,8 @@ class FormData(BaseModel):
 
     useremail: EmailStr
     fecha_registro: date
-    hora_registro: time
-
+    hora_registro: Optional[time] = None
+    
     referenciado_por: Optional[str] = None
     sector: Optional[str] = None
     punto_votacion: Optional[str] = None
