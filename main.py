@@ -25,7 +25,7 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr
 import traceback
 
-from db import get_connection
+#from db import get_connection
 
 app = FastAPI()
 
