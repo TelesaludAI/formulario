@@ -46,12 +46,12 @@ class FormData(BaseModel):
     fecha: date
     municipio: str
     nombre: str
-    cedula: str
+    cedula: int
 
     barrio: Optional[str] = None
     lider: Optional[str] = None
     correo: Optional[EmailStr] = None
-    celular: Optional[str] = None
+    celular: Optional[int] = None
     fecha_cumpleanos: Optional[date] = None
     cargo: Optional[str] = None
     profesion: Optional[str] = None
