@@ -5,95 +5,155 @@ Created on Tue Dec 16 22:15:17 2025
 
 @author: pedronarvaezrosado
 """
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+DATABASE_URL = os.environ["DATABASE_URL"]
+
+def get_connection():
+    return psycopg2.connect(
+        DATABASE_URL,
+        cursor_factory=RealDictCursor
+    )
+
 
 from fastapi import FastAPI, HTTPException, Header
-from pydantic import BaseModel
-import psycopg2
-import os
-
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import date, datetime, time
+from typing import Optional
+from pydantic import BaseModel, EmailStr
+import traceback
+
+from db import get_connection
 
 app = FastAPI()
 
+# 🔐 CORS (obligatorio para Anvil)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],        # en producción puedes limitarlo
-    allow_methods=["*"],        # INCLUYE OPTIONS
-    allow_headers=["*"],        # INCLUYE X-API-KEY
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-DATABASE_URL = os.environ["DATABASE_URL"]
-API_KEY = os.environ["API_KEY"]
-
-#class FormData(BaseModel):
-#    nombre: str
-#    correo: str | None = None
-#    celular: str | None = None
-#    mensaje: str | None = None
-
-from pydantic import BaseModel, EmailStr
-from typing import Optional
-from datetime import date, time
+# 🔐 API KEY
+API_KEY = "clave_secreta_larga"
 
 
 class FormData(BaseModel):
-    # Identificación
     id: str
-
-    # Fechas
     fecha: date
-    fecha_cumpleanos: Optional[date] = None
-    fecha_registro: date
-
-    # Ubicación
     municipio: str
-    barrio: Optional[str] = None
-
-    # Datos personales
     nombre: str
-    cedula: int
-    correo: Optional[str] = None
-    celular: Optional[int] = None
-    profesion: Optional[str] = None
-    cargo: Optional[str] = None
+    cedula: str
 
-    # Campaña
+    barrio: Optional[str] = None
     lider: Optional[str] = None
+    correo: Optional[EmailStr] = None
+    celular: Optional[str] = None
+    fecha_cumpleanos: Optional[date] = None
+    cargo: Optional[str] = None
+    profesion: Optional[str] = None
+
+    useremail: EmailStr
+    fecha_registro: date
+    hora_registro: time
+
     referenciado_por: Optional[str] = None
     sector: Optional[str] = None
+    punto_votacion: Optional[str] = None
+    mesa_votacion: Optional[int] = None
+    lat_lon: Optional[str] = None
     etapa_campana: Optional[str] = None
     confirmacion_voto: Optional[str] = None
 
-    # Votación
-    punto_votacion: Optional[str] = None
-    mesa_votacion: Optional[str] = None
 
-    # Geolocalización
-    lat_lon: Optional[str] = None
-
-    # Auditoría
-    useremail: str
-    hora_registro: time
+@app.get("/ping")
+def ping():
+    return {"status": "ok"}
 
 
 @app.post("/formulario")
 def guardar_formulario(
     data: FormData,
-    x_api_key: str = Header(None)
+    x_api_key: str = Header(...)
 ):
     if x_api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+        raise HTTPException(status_code=401, detail="API KEY inválida")
 
     try:
-        conn = psycopg2.connect(DATABASE_URL, sslmode="require")
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO formularios (nombre, correo, celular, mensaje)
-            VALUES (%s, %s, %s, %s)
-        """, (data.nombre, data.correo, data.celular, data.mensaje))
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO registros_personas (
+                id,
+                fecha,
+                municipio,
+                nombre,
+                cedula,
+                barrio,
+                lider,
+                correo,
+                celular,
+                fecha_cumpleanos,
+                cargo,
+                profesion,
+                useremail,
+                fecha_registro,
+                hora_registro,
+                referenciado_por,
+                sector,
+                punto_votacion,
+                mesa_votacion,
+                lat_lon,
+                etapa_campana,
+                confirmacion_voto
+            )
+            VALUES (
+                %s,%s,%s,%s,%s,
+                %s,%s,%s,%s,%s,
+                %s,%s,%s,%s,%s,
+                %s,%s,%s,%s,%s,
+                %s,%s
+            )
+            """,
+            (
+                data.id,
+                data.fecha,
+                data.municipio,
+                data.nombre,
+                data.cedula,
+                data.barrio,
+                data.lider,
+                data.correo,
+                data.celular,
+                data.fecha_cumpleanos,
+                data.cargo,
+                data.profesion,
+                data.useremail,
+                data.fecha_registro,
+                data.hora_registro,
+                data.referenciado_por,
+                data.sector,
+                data.punto_votacion,
+                data.mesa_votacion,
+                data.lat_lon,
+                data.etapa_campana,
+                data.confirmacion_voto
+            )
+        )
+
         conn.commit()
-        cur.close()
+        cursor.close()
         conn.close()
-        return {"status": "ok"}
+
+        return {"ok": True}
+
     except Exception as e:
+        print("ERROR EN /formulario")
+        print(str(e))
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
